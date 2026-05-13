@@ -1,78 +1,94 @@
 # Sobrevivendo ao Galo
 
-Projeto inicial em C com Raylib para a atividade pratica de AED.
+Jogo em C com Raylib desenvolvido para a atividade pratica de AED, dentro do tema **Na Vibe do Recife**.
 
-## Estrutura
+O jogador controla um foliao em meio ao Carnaval do Recife e precisa sobreviver ao fluxo da multidao, desviando dos foliões e da passagem do Galo da Madrugada para conseguir a maior pontuacao possivel.
+
+## Estrutura do projeto
 
 - `src/`: arquivos `.c`
 - `include/`: arquivos `.h`
-- `ranking.txt`: arquivo gerado para guardar as pontuacoes
+- `assets/`: sprites, imagens e creditos
+- `ranking.txt`: arquivo salvo com nomes e pontuacoes
 
-## Modulos
+## Modulos principais
 
-- `main.c`: abre a janela e roda o loop principal
-- `game.c`: controla estados do jogo, pontuacao e dificuldade
-- `menu.c`: menu inicial e navegacao
+- `main.c`: cria a janela e executa o loop principal
+- `game.c`: controla telas, partida, pontuacao, evento do Galo e fluxo geral do jogo
+- `menu.c`: menu inicial com teclado e mouse
 - `player.c`: movimentacao e desenho do jogador
-- `npc_list.c`: lista encadeada dos NPCs ativos
-- `ranking.c`: ranking com Bubble Sort
+- `npc_list.c`: lista encadeada dos foliões ativos
+- `ranking.c`: ranking de pontuacoes com Bubble Sort
 
 ## Mecanica atual
 
-- jogador se move pela avenida com `WASD` ou setas
-- NPCs entram pelas bordas da tela usando lista encadeada
-- a pontuacao aumenta com o tempo de sobrevivencia
-- de tempos em tempos acontece a `Passagem do Galo`
-- durante a passagem, surge uma faixa de perigo que atravessa a avenida
-- nesse momento, a quantidade e a velocidade dos NPCs aumentam
+- movimentacao do jogador com `WASD` ou setas
+- menu inicial interativo com teclado e mouse
+- foliões surgindo em grupos e faixas de fluxo, simulando uma multidao
+- dificuldade aumentando com o tempo
+- evento especial da `Passagem do Galo`
+- durante o evento, o Galo passa mais devagar pela avenida e atrai mais multidao para a regiao
+- tela de game over com entrada de nome do jogador
+- ranking salvo com nome e pontuacao
+
+## Estrutura de dados principal
+
+O jogo usa **lista encadeada** como estrutura central para controlar os foliões ativos da tela.
+
+Cada foliao possui:
+
+- posicao
+- velocidade
+- tipo
+- dados de movimento
+- ponteiro para o proximo elemento
+
+### Funcoes ligadas a lista encadeada
+
+O projeto possui mais de 6 funcoes relacionadas diretamente a estrutura de dados:
+
+1. `InicializarListaFolioes`
+2. `CriarFoliao`
+3. `InserirFoliao`
+4. `GerarGrupoAleatorio`
+5. `GerarFluxoEmFaixaY`
+6. `AtualizarFolioes`
+7. `DesenharFolioes`
+8. `VerificarColisaoJogadorFolioes`
+9. `RemoverFolioesForaDaTela`
+10. `LimparListaFolioes`
+
+## Algoritmo de ordenacao
+
+O ranking usa **Bubble Sort** para ordenar as pontuacoes do maior valor para o menor valor.
 
 ## Visual atual
 
-- fundo desenhado com tiles do pack `Kenney Top-down Shooter`
-- NPCs com sprites simples em vez de apenas retangulos
-- base visual do Galo carregada por imagem
-- fontes e licencas anotadas em `assets/credits/asset_sources.md`
-
-## Funcoes da lista encadeada
-
-O projeto ja comeca com mais de 6 funcoes ligadas a estrutura de dados:
-
-1. `InitNpcList`
-2. `CreateNpc`
-3. `InsertNpc`
-4. `SpawnRandomNpc`
-5. `UpdateNpcs`
-6. `DrawNpcs`
-7. `CheckPlayerNpcCollision`
-8. `RemoveOffscreenNpcs`
-9. `ClearNpcList`
+- jogador com sprites em 4 direcoes
+- NPCs com sprites simples
+- Galo com sprite proprio em uma estrutura alegorica
+- cenario de avenida carnavalesca
+- creditos dos assets em `assets/credits/asset_sources.md`
 
 ## Como compilar no Windows
 
-O `Makefile` e o `compilar.bat` usam a variavel `RAYLIB_PATH`, que por padrao esta em:
+O projeto usa o Raylib instalado em:
 
 - `C:/raylib/w64devkit`
 
-Dentro dela devem existir:
-
-- `include/raylib.h`
-- `lib/libraylib.a`
-
-Compile com:
-
-```powershell
-mingw32-make
-```
-
-Se o `mingw32-make` falhar no seu Windows, use o arquivo:
+### Compilar pelo arquivo `.bat`
 
 ```powershell
 .\compilar.bat
 ```
 
-Se o Raylib ficar em outra pasta, altere apenas a variavel `RAYLIB_PATH` no `Makefile` e no `compilar.bat`.
+### Executar o jogo
 
-Se preferir compilar direto:
+```powershell
+.\sobrevivendo_ao_galo.exe
+```
+
+### Compilar direto pelo terminal
 
 ```powershell
 C:\raylib\w64devkit\bin\gcc src/main.c src/game.c src/menu.c src/player.c src/npc_list.c src/ranking.c -o sobrevivendo_ao_galo -Iinclude -IC:/raylib/w64devkit/include -LC:/raylib/w64devkit/lib -lraylib -lopengl32 -lgdi32 -lwinmm
@@ -80,7 +96,12 @@ C:\raylib\w64devkit\bin\gcc src/main.c src/game.c src/menu.c src/player.c src/np
 
 ## Controles
 
-- `WASD` ou setas: mover
-- `Enter`: confirmar no menu
+- `WASD` ou setas: mover jogador
+- `Mouse`: navegar e clicar no menu
+- `Enter`: confirmar opcoes e salvar nome no game over
 - `Esc`: voltar
 - `R`: abrir ranking na tela de game over
+
+## Observacao para entrega
+
+Na hora de enviar o projeto da atividade, o ideal e compactar apenas os arquivos necessarios para reproducao do programa e **nao incluir os executaveis `.exe`**.
