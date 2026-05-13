@@ -3,32 +3,33 @@
 
 #include "raylib.h"
 
-typedef struct Npc {
-    Rectangle body;
-    float speedX;
-    float speedY;
-    float flowLine;
-    float swayPhase;
-    float swaySpeed;
-    float swayAmount;
-    int flowAxis;
-    int type;
-    struct Npc *next;
-} Npc;
+typedef struct Foliao {
+    Rectangle corpo;
+    float velocidadeX;
+    float velocidadeY;
+    float linhaFluxo;
+    float faseBalanco;
+    float velocidadeBalanco;
+    float amplitudeBalanco;
+    int eixoFluxo;
+    int tipo;
+    struct Foliao *proximo;
+} Foliao;
 
 typedef struct {
-    Npc *head;
-    int count;
-} NpcList;
+    Foliao *inicio;
+    int quantidade;
+} ListaFolioes;
 
-void InitNpcList(NpcList *list);
-Npc *CreateNpc(float x, float y, float width, float height, float speedX, float speedY, int type);
-void InsertNpc(NpcList *list, Npc *newNpc);
-void SpawnRandomNpc(NpcList *list, int screenWidth, int screenHeight, float baseSpeed, int crowdLevel);
-void UpdateNpcs(NpcList *list, float deltaTime);
-void DrawNpcs(const NpcList *list, const Texture2D *npcTextureA, const Texture2D *npcTextureB);
-int CheckPlayerNpcCollision(const NpcList *list, Rectangle playerBody);
-void RemoveOffscreenNpcs(NpcList *list, int screenWidth, int screenHeight);
-void ClearNpcList(NpcList *list);
+void InicializarListaFolioes(ListaFolioes *lista);
+Foliao *CriarFoliao(float posicaoX, float posicaoY, float largura, float altura, float velocidadeX, float velocidadeY, int tipo);
+void InserirFoliao(ListaFolioes *lista, Foliao *novoFoliao);
+void GerarGrupoAleatorio(ListaFolioes *lista, int larguraTela, int alturaTela, float velocidadeBase, int nivelMultidao);
+void GerarFluxoEmFaixaY(ListaFolioes *lista, int larguraTela, float faixaY, float velocidadeBase, int tamanhoGrupo);
+void AtualizarFolioes(ListaFolioes *lista, float deltaTime);
+void DesenharFolioes(const ListaFolioes *lista, const Texture2D *texturaFoliaoA, const Texture2D *texturaFoliaoB);
+int VerificarColisaoJogadorFolioes(const ListaFolioes *lista, Rectangle corpoJogador);
+void RemoverFolioesForaDaTela(ListaFolioes *lista, int larguraTela, int alturaTela);
+void LimparListaFolioes(ListaFolioes *lista);
 
 #endif

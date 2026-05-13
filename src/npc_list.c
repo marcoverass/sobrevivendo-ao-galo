@@ -1,347 +1,302 @@
-#include <stdlib.h>
 #include <math.h>
+#include <stdlib.h>
 
 #include "npc_list.h"
 
-#define FLOW_AXIS_HORIZONTAL 0
-#define FLOW_AXIS_VERTICAL 1
+#define EIXO_FLUXO_HORIZONTAL 0
+#define EIXO_FLUXO_VERTICAL 1
 
-static float RandomFloatInRange(float minValue, float maxValue) {
-    return minValue + ((float)GetRandomValue(0, 1000) / 1000.0f) * (maxValue - minValue);
+static float SortearFloat(float valorMinimo, float valorMaximo) {
+    return valorMinimo + ((float)GetRandomValue(0, 1000) / 1000.0f) * (valorMaximo - valorMinimo);
 }
 
-static int ChooseLaneWeighted(const int *weights, int laneCount) {
-    int totalWeight = 0;
-    int randomValue;
-    int laneIndex;
+static int EscolherFaixaComPeso(const int *pesos, int quantidadeFaixas) {
+    int somaPesos = 0;
+    int valorSorteado;
+    int indiceFaixa;
 
-    for (laneIndex = 0; laneIndex < laneCount; laneIndex++) {
-        totalWeight += weights[laneIndex];
+    for (indiceFaixa = 0; indiceFaixa < quantidadeFaixas; indiceFaixa++) {
+        somaPesos += pesos[indiceFaixa];
     }
 
-    randomValue = GetRandomValue(1, totalWeight);
+    valorSorteado = GetRandomValue(1, somaPesos);
 
-    for (laneIndex = 0; laneIndex < laneCount; laneIndex++) {
-        randomValue -= weights[laneIndex];
+    for (indiceFaixa = 0; indiceFaixa < quantidadeFaixas; indiceFaixa++) {
+        valorSorteado -= pesos[indiceFaixa];
 
-        if (randomValue <= 0) {
-            return laneIndex;
+        if (valorSorteado <= 0) {
+            return indiceFaixa;
         }
     }
 
     return 0;
 }
 
-static void SetupNpcMovementStyle(Npc *npc) {
-    if (fabsf(npc->speedX) > fabsf(npc->speedY)) {
-        npc->flowAxis = FLOW_AXIS_HORIZONTAL;
-        npc->flowLine = npc->body.y;
+static void ConfigurarEstiloDeMovimento(Foliao *foliao) {
+    if (fabsf(foliao->velocidadeX) > fabsf(foliao->velocidadeY)) {
+        foliao->eixoFluxo = EIXO_FLUXO_HORIZONTAL;
+        foliao->linhaFluxo = foliao->corpo.y;
     } else {
-        npc->flowAxis = FLOW_AXIS_VERTICAL;
-        npc->flowLine = npc->body.x;
+        foliao->eixoFluxo = EIXO_FLUXO_VERTICAL;
+        foliao->linhaFluxo = foliao->corpo.x;
     }
 
-    npc->swayPhase = RandomFloatInRange(0.0f, 6.28f);
-    npc->swaySpeed = RandomFloatInRange(2.2f, 3.8f);
-    npc->swayAmount = RandomFloatInRange(4.0f, 10.0f);
+    foliao->faseBalanco = SortearFloat(0.0f, 6.28f);
+    foliao->velocidadeBalanco = SortearFloat(2.2f, 3.8f);
+    foliao->amplitudeBalanco = SortearFloat(4.0f, 10.0f);
 }
 
-static void SpawnNpcGroup(NpcList *list,
-                          int groupSize,
-                          float startX,
-                          float startY,
-                          float spacingX,
-                          float spacingY,
-                          float speedX,
-                          float speedY) {
-    int index;
-    int rowSize = 2;
+static void GerarGrupoFolioes(ListaFolioes *lista,
+                              int tamanhoGrupo,
+                              float posicaoXInicial,
+                              float posicaoYInicial,
+                              float espacamentoX,
+                              float espacamentoY,
+                              float velocidadeX,
+                              float velocidadeY) {
+    int indice;
+    int tamanhoLinha = 2;
 
-    for (index = 0; index < groupSize; index++) {
-        float size = RandomFloatInRange(24.0f, 31.0f);
-        int row = index / rowSize;
-        int column = index % rowSize;
-        float offsetX;
-        float offsetY;
-        float variedSpeedX = speedX + RandomFloatInRange(-10.0f, 10.0f);
-        float variedSpeedY = speedY + RandomFloatInRange(-10.0f, 10.0f);
+    for (indice = 0; indice < tamanhoGrupo; indice++) {
+        float tamanho = SortearFloat(24.0f, 31.0f);
+        int linha = indice / tamanhoLinha;
+        int coluna = indice % tamanhoLinha;
+        float deslocamentoX;
+        float deslocamentoY;
+        float velocidadeVariadaX = velocidadeX + SortearFloat(-10.0f, 10.0f);
+        float velocidadeVariadaY = velocidadeY + SortearFloat(-10.0f, 10.0f);
+        Foliao *foliao;
 
-        if (fabsf(speedX) > fabsf(speedY)) {
-            offsetX = spacingX * row + RandomFloatInRange(-5.0f, 5.0f);
-            offsetY = spacingY * column + RandomFloatInRange(-18.0f, 18.0f);
+        if (fabsf(velocidadeX) > fabsf(velocidadeY)) {
+            deslocamentoX = espacamentoX * linha + SortearFloat(-5.0f, 5.0f);
+            deslocamentoY = espacamentoY * coluna + SortearFloat(-18.0f, 18.0f);
         } else {
-            offsetX = spacingX * column + RandomFloatInRange(-18.0f, 18.0f);
-            offsetY = spacingY * row + RandomFloatInRange(-5.0f, 5.0f);
+            deslocamentoX = espacamentoX * coluna + SortearFloat(-18.0f, 18.0f);
+            deslocamentoY = espacamentoY * linha + SortearFloat(-5.0f, 5.0f);
         }
 
-        {
-            Npc *npc = CreateNpc(startX + offsetX,
-                                 startY + offsetY,
-                                 size,
-                                 size,
-                                 variedSpeedX,
-                                 variedSpeedY,
-                                 GetRandomValue(0, 2));
+        foliao = CriarFoliao(posicaoXInicial + deslocamentoX,
+                             posicaoYInicial + deslocamentoY,
+                             tamanho,
+                             tamanho,
+                             velocidadeVariadaX,
+                             velocidadeVariadaY,
+                             GetRandomValue(0, 2));
 
-            if (npc == NULL) {
-                continue;
-            }
-
-            SetupNpcMovementStyle(npc);
-            InsertNpc(list, npc);
+        if (foliao == NULL) {
+            continue;
         }
+
+        ConfigurarEstiloDeMovimento(foliao);
+        InserirFoliao(lista, foliao);
     }
 }
 
-void InitNpcList(NpcList *list) {
-    list->head = NULL;
-    list->count = 0;
+void InicializarListaFolioes(ListaFolioes *lista) {
+    lista->inicio = NULL;
+    lista->quantidade = 0;
 }
 
-Npc *CreateNpc(float x, float y, float width, float height, float speedX, float speedY, int type) {
-    Npc *newNpc = (Npc *)malloc(sizeof(Npc));
+Foliao *CriarFoliao(float posicaoX, float posicaoY, float largura, float altura, float velocidadeX, float velocidadeY, int tipo) {
+    Foliao *novoFoliao = (Foliao *)malloc(sizeof(Foliao));
 
-    if (newNpc == NULL) {
+    if (novoFoliao == NULL) {
         return NULL;
     }
 
-    newNpc->body = (Rectangle){x, y, width, height};
-    newNpc->speedX = speedX;
-    newNpc->speedY = speedY;
-    newNpc->flowLine = 0.0f;
-    newNpc->swayPhase = 0.0f;
-    newNpc->swaySpeed = 0.0f;
-    newNpc->swayAmount = 0.0f;
-    newNpc->flowAxis = FLOW_AXIS_HORIZONTAL;
-    newNpc->type = type;
-    newNpc->next = NULL;
+    novoFoliao->corpo = (Rectangle){posicaoX, posicaoY, largura, altura};
+    novoFoliao->velocidadeX = velocidadeX;
+    novoFoliao->velocidadeY = velocidadeY;
+    novoFoliao->linhaFluxo = 0.0f;
+    novoFoliao->faseBalanco = 0.0f;
+    novoFoliao->velocidadeBalanco = 0.0f;
+    novoFoliao->amplitudeBalanco = 0.0f;
+    novoFoliao->eixoFluxo = EIXO_FLUXO_HORIZONTAL;
+    novoFoliao->tipo = tipo;
+    novoFoliao->proximo = NULL;
 
-    return newNpc;
+    return novoFoliao;
 }
 
-void InsertNpc(NpcList *list, Npc *newNpc) {
-    if (newNpc == NULL) {
+void InserirFoliao(ListaFolioes *lista, Foliao *novoFoliao) {
+    if (novoFoliao == NULL) {
         return;
     }
 
-    newNpc->next = list->head;
-    list->head = newNpc;
-    list->count++;
+    novoFoliao->proximo = lista->inicio;
+    lista->inicio = novoFoliao;
+    lista->quantidade++;
 }
 
-void SpawnRandomNpc(NpcList *list, int screenWidth, int screenHeight, float baseSpeed, int crowdLevel) {
-    static const float horizontalLanes[] = {150.0f, 205.0f, 260.0f, 315.0f, 370.0f};
-    static const float verticalLanes[] = {190.0f, 315.0f, 445.0f, 580.0f, 720.0f};
-    static const int horizontalLaneWeights[] = {2, 4, 5, 4, 2};
-    static const int verticalLaneWeights[] = {1, 2, 3, 2, 1};
-    int crowdPattern;
-    int laneIndex;
-    int groupSize;
-    int shouldSpawnExtraGroup;
+void GerarFluxoEmFaixaY(ListaFolioes *lista, int larguraTela, float faixaY, float velocidadeBase, int tamanhoGrupo) {
+    if (tamanhoGrupo < 2) {
+        tamanhoGrupo = 2;
+    }
+    if (tamanhoGrupo > 8) {
+        tamanhoGrupo = 8;
+    }
 
-    if (list->count > 90) {
+    if (GetRandomValue(0, 1) == 0) {
+        GerarGrupoFolioes(lista, tamanhoGrupo, -26.0f, faixaY, -24.0f, 18.0f, velocidadeBase, 0.0f);
+    } else {
+        GerarGrupoFolioes(lista, tamanhoGrupo, (float)larguraTela + 26.0f, faixaY, 24.0f, 18.0f, -velocidadeBase, 0.0f);
+    }
+}
+
+void GerarGrupoAleatorio(ListaFolioes *lista, int larguraTela, int alturaTela, float velocidadeBase, int nivelMultidao) {
+    static const float faixasHorizontais[] = {150.0f, 205.0f, 260.0f, 315.0f, 370.0f};
+    static const float faixasVerticais[] = {190.0f, 315.0f, 445.0f, 580.0f, 720.0f};
+    static const int pesosFaixasHorizontais[] = {2, 4, 5, 4, 2};
+    static const int pesosFaixasVerticais[] = {1, 2, 3, 2, 1};
+    int padraoMultidao;
+    int indiceFaixa;
+    int tamanhoGrupo;
+    int deveGerarGrupoExtra;
+
+    if (lista->quantidade > 90) {
         return;
     }
 
-    groupSize = GetRandomValue(3, 5) + crowdLevel;
-    crowdPattern = GetRandomValue(0, 99);
-    shouldSpawnExtraGroup = crowdLevel >= 3 && GetRandomValue(0, 99) < 35;
+    tamanhoGrupo = GetRandomValue(3, 5) + nivelMultidao;
+    padraoMultidao = GetRandomValue(0, 99);
+    deveGerarGrupoExtra = nivelMultidao >= 3 && GetRandomValue(0, 99) < 35;
 
-    if (groupSize > 10) {
-        groupSize = 10;
+    if (tamanhoGrupo > 10) {
+        tamanhoGrupo = 10;
     }
 
-    /* A maior parte da multidao segue o fluxo da avenida em faixas parecidas. */
-    if (crowdPattern < 70) {
-        laneIndex = ChooseLaneWeighted(horizontalLaneWeights, 5);
+    if (padraoMultidao < 70) {
+        indiceFaixa = EscolherFaixaComPeso(pesosFaixasHorizontais, 5);
 
         if (GetRandomValue(0, 1) == 0) {
-            SpawnNpcGroup(list,
-                          groupSize,
-                          -26.0f,
-                          horizontalLanes[laneIndex],
-                          -26.0f,
-                          20.0f,
-                          baseSpeed,
-                          0.0f);
+            GerarGrupoFolioes(lista, tamanhoGrupo, -26.0f, faixasHorizontais[indiceFaixa], -26.0f, 20.0f, velocidadeBase, 0.0f);
 
-            if (shouldSpawnExtraGroup) {
-                laneIndex = ChooseLaneWeighted(horizontalLaneWeights, 5);
-                SpawnNpcGroup(list,
-                              groupSize - 1,
-                              -26.0f,
-                              horizontalLanes[laneIndex],
-                              -26.0f,
-                              20.0f,
-                              baseSpeed + 12.0f,
-                              0.0f);
+            if (deveGerarGrupoExtra) {
+                indiceFaixa = EscolherFaixaComPeso(pesosFaixasHorizontais, 5);
+                GerarGrupoFolioes(lista, tamanhoGrupo - 1, -26.0f, faixasHorizontais[indiceFaixa], -26.0f, 20.0f, velocidadeBase + 12.0f, 0.0f);
             }
         } else {
-            SpawnNpcGroup(list,
-                          groupSize,
-                          (float)screenWidth + 26.0f,
-                          horizontalLanes[laneIndex],
-                          26.0f,
-                          20.0f,
-                          -baseSpeed,
-                          0.0f);
+            GerarGrupoFolioes(lista, tamanhoGrupo, (float)larguraTela + 26.0f, faixasHorizontais[indiceFaixa], 26.0f, 20.0f, -velocidadeBase, 0.0f);
 
-            if (shouldSpawnExtraGroup) {
-                laneIndex = ChooseLaneWeighted(horizontalLaneWeights, 5);
-                SpawnNpcGroup(list,
-                              groupSize - 1,
-                              (float)screenWidth + 26.0f,
-                              horizontalLanes[laneIndex],
-                              26.0f,
-                              20.0f,
-                              -(baseSpeed + 12.0f),
-                              0.0f);
+            if (deveGerarGrupoExtra) {
+                indiceFaixa = EscolherFaixaComPeso(pesosFaixasHorizontais, 5);
+                GerarGrupoFolioes(lista, tamanhoGrupo - 1, (float)larguraTela + 26.0f, faixasHorizontais[indiceFaixa], 26.0f, 20.0f, -(velocidadeBase + 12.0f), 0.0f);
             }
         }
     } else {
-        laneIndex = ChooseLaneWeighted(verticalLaneWeights, 5);
+        indiceFaixa = EscolherFaixaComPeso(pesosFaixasVerticais, 5);
 
         if (GetRandomValue(0, 1) == 0) {
-            SpawnNpcGroup(list,
-                          groupSize - 1,
-                          verticalLanes[laneIndex],
-                          -26.0f,
-                          20.0f,
-                          -26.0f,
-                          0.0f,
-                          baseSpeed * 0.75f);
+            GerarGrupoFolioes(lista, tamanhoGrupo - 1, faixasVerticais[indiceFaixa], -26.0f, 20.0f, -26.0f, 0.0f, velocidadeBase * 0.75f);
 
-            if (shouldSpawnExtraGroup) {
-                laneIndex = ChooseLaneWeighted(verticalLaneWeights, 5);
-                SpawnNpcGroup(list,
-                              groupSize - 2,
-                              verticalLanes[laneIndex],
-                              -26.0f,
-                              20.0f,
-                              -26.0f,
-                              0.0f,
-                              baseSpeed * 0.82f);
+            if (deveGerarGrupoExtra) {
+                indiceFaixa = EscolherFaixaComPeso(pesosFaixasVerticais, 5);
+                GerarGrupoFolioes(lista, tamanhoGrupo - 2, faixasVerticais[indiceFaixa], -26.0f, 20.0f, -26.0f, 0.0f, velocidadeBase * 0.82f);
             }
         } else {
-            SpawnNpcGroup(list,
-                          groupSize - 1,
-                          verticalLanes[laneIndex],
-                          (float)screenHeight + 26.0f,
-                          20.0f,
-                          26.0f,
-                          0.0f,
-                          -baseSpeed * 0.75f);
+            GerarGrupoFolioes(lista, tamanhoGrupo - 1, faixasVerticais[indiceFaixa], (float)alturaTela + 26.0f, 20.0f, 26.0f, 0.0f, -velocidadeBase * 0.75f);
 
-            if (shouldSpawnExtraGroup) {
-                laneIndex = ChooseLaneWeighted(verticalLaneWeights, 5);
-                SpawnNpcGroup(list,
-                              groupSize - 2,
-                              verticalLanes[laneIndex],
-                              (float)screenHeight + 26.0f,
-                              20.0f,
-                              26.0f,
-                              0.0f,
-                              -(baseSpeed * 0.82f));
+            if (deveGerarGrupoExtra) {
+                indiceFaixa = EscolherFaixaComPeso(pesosFaixasVerticais, 5);
+                GerarGrupoFolioes(lista, tamanhoGrupo - 2, faixasVerticais[indiceFaixa], (float)alturaTela + 26.0f, 20.0f, 26.0f, 0.0f, -(velocidadeBase * 0.82f));
             }
         }
     }
 }
 
-void UpdateNpcs(NpcList *list, float deltaTime) {
-    Npc *current = list->head;
+void AtualizarFolioes(ListaFolioes *lista, float deltaTime) {
+    Foliao *foliaoAtual = lista->inicio;
 
-    while (current != NULL) {
-        current->body.x += current->speedX * deltaTime;
-        current->body.y += current->speedY * deltaTime;
-        current->swayPhase += current->swaySpeed * deltaTime;
+    while (foliaoAtual != NULL) {
+        foliaoAtual->corpo.x += foliaoAtual->velocidadeX * deltaTime;
+        foliaoAtual->corpo.y += foliaoAtual->velocidadeY * deltaTime;
+        foliaoAtual->faseBalanco += foliaoAtual->velocidadeBalanco * deltaTime;
 
-        if (current->flowAxis == FLOW_AXIS_HORIZONTAL) {
-            current->body.y = current->flowLine + sinf(current->swayPhase) * current->swayAmount;
+        if (foliaoAtual->eixoFluxo == EIXO_FLUXO_HORIZONTAL) {
+            foliaoAtual->corpo.y = foliaoAtual->linhaFluxo + sinf(foliaoAtual->faseBalanco) * foliaoAtual->amplitudeBalanco;
         } else {
-            current->body.x = current->flowLine + sinf(current->swayPhase) * current->swayAmount;
+            foliaoAtual->corpo.x = foliaoAtual->linhaFluxo + sinf(foliaoAtual->faseBalanco) * foliaoAtual->amplitudeBalanco;
         }
 
-        current = current->next;
+        foliaoAtual = foliaoAtual->proximo;
     }
 }
 
-void DrawNpcs(const NpcList *list, const Texture2D *npcTextureA, const Texture2D *npcTextureB) {
-    const Npc *current = list->head;
+void DesenharFolioes(const ListaFolioes *lista, const Texture2D *texturaFoliaoA, const Texture2D *texturaFoliaoB) {
+    const Foliao *foliaoAtual = lista->inicio;
 
-    while (current != NULL) {
-        const Texture2D *selectedTexture = npcTextureA;
+    while (foliaoAtual != NULL) {
+        const Texture2D *texturaSelecionada = texturaFoliaoA;
 
-        if (current->type == 1) {
-            selectedTexture = npcTextureB;
-        } else if (current->type == 2) {
-            selectedTexture = npcTextureA;
+        if (foliaoAtual->tipo == 1) {
+            texturaSelecionada = texturaFoliaoB;
+        } else if (foliaoAtual->tipo == 2) {
+            texturaSelecionada = texturaFoliaoA;
         }
 
-        if (selectedTexture != NULL && selectedTexture->id > 0) {
-            Rectangle source = {0.0f, 0.0f, (float)selectedTexture->width, (float)selectedTexture->height};
-            Vector2 position = {current->body.x, current->body.y};
-
-            DrawTexturePro(*selectedTexture, source, current->body, (Vector2){0.0f, 0.0f}, 0.0f, WHITE);
+        if (texturaSelecionada != NULL && texturaSelecionada->id > 0) {
+            Rectangle origem = {0.0f, 0.0f, (float)texturaSelecionada->width, (float)texturaSelecionada->height};
+            DrawTexturePro(*texturaSelecionada, origem, foliaoAtual->corpo, (Vector2){0.0f, 0.0f}, 0.0f, WHITE);
         } else {
-            DrawRectangleRec(current->body, RED);
+            DrawRectangleRec(foliaoAtual->corpo, RED);
         }
 
-        current = current->next;
+        foliaoAtual = foliaoAtual->proximo;
     }
 }
 
-int CheckPlayerNpcCollision(const NpcList *list, Rectangle playerBody) {
-    const Npc *current = list->head;
+int VerificarColisaoJogadorFolioes(const ListaFolioes *lista, Rectangle corpoJogador) {
+    const Foliao *foliaoAtual = lista->inicio;
 
-    while (current != NULL) {
-        if (CheckCollisionRecs(playerBody, current->body)) {
+    while (foliaoAtual != NULL) {
+        if (CheckCollisionRecs(corpoJogador, foliaoAtual->corpo)) {
             return 1;
         }
-        current = current->next;
+        foliaoAtual = foliaoAtual->proximo;
     }
 
     return 0;
 }
 
-void RemoveOffscreenNpcs(NpcList *list, int screenWidth, int screenHeight) {
-    Npc *current = list->head;
-    Npc *previous = NULL;
+void RemoverFolioesForaDaTela(ListaFolioes *lista, int larguraTela, int alturaTela) {
+    Foliao *foliaoAtual = lista->inicio;
+    Foliao *foliaoAnterior = NULL;
 
-    while (current != NULL) {
-        int outLeft = current->body.x + current->body.width < -80;
-        int outRight = current->body.x > screenWidth + 80;
-        int outTop = current->body.y + current->body.height < -80;
-        int outBottom = current->body.y > screenHeight + 80;
-        int shouldRemove = outLeft || outRight || outTop || outBottom;
+    while (foliaoAtual != NULL) {
+        int saiuEsquerda = foliaoAtual->corpo.x + foliaoAtual->corpo.width < -80;
+        int saiuDireita = foliaoAtual->corpo.x > larguraTela + 80;
+        int saiuCima = foliaoAtual->corpo.y + foliaoAtual->corpo.height < -80;
+        int saiuBaixo = foliaoAtual->corpo.y > alturaTela + 80;
+        int deveRemover = saiuEsquerda || saiuDireita || saiuCima || saiuBaixo;
 
-        if (shouldRemove) {
-            Npc *removed = current;
+        if (deveRemover) {
+            Foliao *foliaoRemovido = foliaoAtual;
 
-            if (previous == NULL) {
-                list->head = current->next;
+            if (foliaoAnterior == NULL) {
+                lista->inicio = foliaoAtual->proximo;
             } else {
-                previous->next = current->next;
+                foliaoAnterior->proximo = foliaoAtual->proximo;
             }
 
-            current = current->next;
-            free(removed);
-            list->count--;
+            foliaoAtual = foliaoAtual->proximo;
+            free(foliaoRemovido);
+            lista->quantidade--;
         } else {
-            previous = current;
-            current = current->next;
+            foliaoAnterior = foliaoAtual;
+            foliaoAtual = foliaoAtual->proximo;
         }
     }
 }
 
-void ClearNpcList(NpcList *list) {
-    Npc *current = list->head;
+void LimparListaFolioes(ListaFolioes *lista) {
+    Foliao *foliaoAtual = lista->inicio;
 
-    while (current != NULL) {
-        Npc *next = current->next;
-        free(current);
-        current = next;
+    while (foliaoAtual != NULL) {
+        Foliao *proximoFoliao = foliaoAtual->proximo;
+        free(foliaoAtual);
+        foliaoAtual = proximoFoliao;
     }
 
-    list->head = NULL;
-    list->count = 0;
+    lista->inicio = NULL;
+    lista->quantidade = 0;
 }

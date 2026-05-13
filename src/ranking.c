@@ -1,77 +1,88 @@
 #include <stdio.h>
+#include <string.h>
 
 #include "ranking.h"
 
-void InitRanking(Ranking *ranking) {
-    int index;
+void InicializarRanking(Ranking *ranking) {
+    int indice;
 
-    ranking->count = 0;
-    for (index = 0; index < MAX_RANKING_SCORES; index++) {
-        ranking->values[index] = 0;
+    ranking->quantidade = 0;
+    for (indice = 0; indice < MAX_RANKING_SCORES; indice++) {
+        ranking->registros[indice].nome[0] = '\0';
+        ranking->registros[indice].pontuacao = 0;
     }
 }
 
-void SortRanking(Ranking *ranking) {
+void OrdenarRanking(Ranking *ranking) {
     int i;
     int j;
 
-    for (i = 0; i < ranking->count - 1; i++) {
-        for (j = 0; j < ranking->count - 1 - i; j++) {
-            if (ranking->values[j] < ranking->values[j + 1]) {
-                int temp = ranking->values[j];
-                ranking->values[j] = ranking->values[j + 1];
-                ranking->values[j + 1] = temp;
+    for (i = 0; i < ranking->quantidade - 1; i++) {
+        for (j = 0; j < ranking->quantidade - 1 - i; j++) {
+            if (ranking->registros[j].pontuacao < ranking->registros[j + 1].pontuacao) {
+                RegistroRanking temporario = ranking->registros[j];
+                ranking->registros[j] = ranking->registros[j + 1];
+                ranking->registros[j + 1] = temporario;
             }
         }
     }
 }
 
-void AddScoreToRanking(Ranking *ranking, int score) {
-    if (ranking->count < MAX_RANKING_SCORES) {
-        ranking->values[ranking->count] = score;
-        ranking->count++;
+void AdicionarPontuacaoAoRanking(Ranking *ranking, const char *nomeJogador, int pontuacao) {
+    if (ranking->quantidade < MAX_RANKING_SCORES) {
+        strncpy(ranking->registros[ranking->quantidade].nome, nomeJogador, MAX_NOME_JOGADOR - 1);
+        ranking->registros[ranking->quantidade].nome[MAX_NOME_JOGADOR - 1] = '\0';
+        ranking->registros[ranking->quantidade].pontuacao = pontuacao;
+        ranking->quantidade++;
     } else {
-        SortRanking(ranking);
+        OrdenarRanking(ranking);
 
-        if (score > ranking->values[MAX_RANKING_SCORES - 1]) {
-            ranking->values[MAX_RANKING_SCORES - 1] = score;
+        if (pontuacao > ranking->registros[MAX_RANKING_SCORES - 1].pontuacao) {
+            strncpy(ranking->registros[MAX_RANKING_SCORES - 1].nome, nomeJogador, MAX_NOME_JOGADOR - 1);
+            ranking->registros[MAX_RANKING_SCORES - 1].nome[MAX_NOME_JOGADOR - 1] = '\0';
+            ranking->registros[MAX_RANKING_SCORES - 1].pontuacao = pontuacao;
         } else {
             return;
         }
     }
 
-    SortRanking(ranking);
+    OrdenarRanking(ranking);
 }
 
-void LoadRanking(Ranking *ranking, const char *fileName) {
-    FILE *file = fopen(fileName, "r");
+void CarregarRanking(Ranking *ranking, const char *nomeArquivo) {
+    FILE *arquivo = fopen(nomeArquivo, "r");
+    char nome[MAX_NOME_JOGADOR];
+    int pontuacao;
 
-    InitRanking(ranking);
+    InicializarRanking(ranking);
 
-    if (file == NULL) {
+    if (arquivo == NULL) {
         return;
     }
 
-    while (ranking->count < MAX_RANKING_SCORES &&
-           fscanf(file, "%d", &ranking->values[ranking->count]) == 1) {
-        ranking->count++;
+    while (ranking->quantidade < MAX_RANKING_SCORES &&
+           fscanf(arquivo, " %31[^;];%d", nome, &pontuacao) == 2) {
+        strncpy(ranking->registros[ranking->quantidade].nome, nome, MAX_NOME_JOGADOR - 1);
+        ranking->registros[ranking->quantidade].nome[MAX_NOME_JOGADOR - 1] = '\0';
+        ranking->registros[ranking->quantidade].pontuacao = pontuacao;
+        ranking->quantidade++;
     }
 
-    fclose(file);
-    SortRanking(ranking);
+    fclose(arquivo);
+    OrdenarRanking(ranking);
 }
 
-void SaveRanking(const Ranking *ranking, const char *fileName) {
-    FILE *file = fopen(fileName, "w");
-    int index;
+void SalvarRanking(const Ranking *ranking, const char *nomeArquivo) {
+    FILE *arquivo = fopen(nomeArquivo, "w");
+    int indice;
 
-    if (file == NULL) {
+    if (arquivo == NULL) {
         return;
     }
 
-    for (index = 0; index < ranking->count; index++) {
-        fprintf(file, "%d\n", ranking->values[index]);
+    for (indice = 0; indice < ranking->quantidade; indice++) {
+        fprintf(arquivo, "%s;%d\n", ranking->registros[indice].nome, ranking->registros[indice].pontuacao);
     }
 
-    fclose(file);
+    fclose(arquivo);
 }

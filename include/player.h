@@ -4,14 +4,19 @@
 #include "raylib.h"
 
 typedef struct {
-    Rectangle body;
-    float speed;
-    Color color;
-} Player;
+    Rectangle corpo;
+    float velocidade;
+    Color cor;
+    int direcaoAtual;
+} Jogador;
 
-void InitPlayer(Player *player, float startX, float startY);
-void UpdatePlayer(Player *player, int screenWidth, int screenHeight);
-void DrawPlayer(const Player *player);
-void ResetPlayer(Player *player, float startX, float startY);
+void InicializarJogador(Jogador *jogador, float posicaoXInicial, float posicaoYInicial);
+void AtualizarJogador(Jogador *jogador, int larguraTela, int alturaTela);
+void DesenharJogador(const Jogador *jogador,
+                     const Texture2D *texturaFrente,
+                     const Texture2D *texturaCostas,
+                     const Texture2D *texturaEsquerda,
+                     const Texture2D *texturaDireita);
+void ResetarJogador(Jogador *jogador, float posicaoXInicial, float posicaoYInicial);
 
 #endif

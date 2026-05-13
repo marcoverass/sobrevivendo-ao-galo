@@ -2,23 +2,23 @@
 #include "raylib.h"
 
 int main(void) {
-    Game game;
+    Jogo jogo;
 
-    InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Sobrevivendo ao Galo");
+    InitWindow(LARGURA_TELA, ALTURA_TELA, "Sobrevivendo ao Galo");
     SetTargetFPS(60);
 
-    InitGame(&game);
+    InicializarJogo(&jogo);
 
-    while (!WindowShouldClose() && game.running) {
-        UpdateGame(&game);
+    while (!WindowShouldClose() && jogo.executando) {
+        AtualizarJogo(&jogo);
 
         BeginDrawing();
         ClearBackground(RAYWHITE);
-        DrawGame(&game);
+        DesenharJogo(&jogo);
         EndDrawing();
     }
 
-    UnloadGame(&game);
+    EncerrarJogo(&jogo);
     CloseWindow();
 
     return 0;

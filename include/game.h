@@ -6,47 +6,52 @@
 #include "player.h"
 #include "ranking.h"
 
-#define SCREEN_WIDTH 960
-#define SCREEN_HEIGHT 540
-#define MAX_PLAYER_NAME 32
+#define LARGURA_TELA 960
+#define ALTURA_TELA 540
 
 typedef enum {
-    SCREEN_MENU = 0,
-    SCREEN_PLAYING,
-    SCREEN_RANKING,
-    SCREEN_GAME_OVER
-} GameScreen;
+    TELA_MENU = 0,
+    TELA_JOGANDO,
+    TELA_RANKING,
+    TELA_GAME_OVER
+} TelaJogo;
 
 typedef struct {
-    GameScreen currentScreen;
-    Player player;
-    NpcList npcs;
+    TelaJogo telaAtual;
+    Jogador jogador;
+    ListaFolioes listaFolioes;
     Ranking ranking;
     Menu menu;
-    float scoreTime;
-    int score;
-    float npcSpawnTimer;
-    float npcSpawnInterval;
-    float difficultyTimer;
-    float npcBaseSpeed;
-    int galoEventActive;
-    float galoEventTimer;
-    float galoEventCooldown;
-    float galoEventDuration;
-    Rectangle galoZone;
-    float galoZoneSpeed;
-    int galoWarningTimer;
-    Texture2D tileTexture;
-    Texture2D npcTextureA;
-    Texture2D npcTextureB;
-    Texture2D galoTexture;
-    int running;
-} Game;
+    float tempoPontuacao;
+    int pontuacao;
+    float temporizadorSpawnNpc;
+    float intervaloSpawnNpc;
+    float temporizadorDificuldade;
+    float velocidadeBaseFolioes;
+    int eventoGaloAtivo;
+    float temporizadorEventoGalo;
+    float recargaEventoGalo;
+    float duracaoEventoGalo;
+    Rectangle zonaGalo;
+    float velocidadeZonaGalo;
+    int temporizadorAvisoGalo;
+    Texture2D texturaChao;
+    Texture2D texturaFoliaoA;
+    Texture2D texturaFoliaoB;
+    Texture2D texturaGalo;
+    Texture2D texturaJogadorFrente;
+    Texture2D texturaJogadorCostas;
+    Texture2D texturaJogadorEsquerda;
+    Texture2D texturaJogadorDireita;
+    char nomeJogadorAtual[MAX_NOME_JOGADOR];
+    int editandoNome;
+    int executando;
+} Jogo;
 
-void InitGame(Game *game);
-void ResetMatch(Game *game);
-void UpdateGame(Game *game);
-void DrawGame(const Game *game);
-void UnloadGame(Game *game);
+void InicializarJogo(Jogo *jogo);
+void ResetarPartida(Jogo *jogo);
+void AtualizarJogo(Jogo *jogo);
+void DesenharJogo(const Jogo *jogo);
+void EncerrarJogo(Jogo *jogo);
 
 #endif

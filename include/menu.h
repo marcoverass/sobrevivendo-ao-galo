@@ -4,18 +4,19 @@
 #include "raylib.h"
 
 typedef enum {
-    MENU_OPTION_PLAY = 0,
-    MENU_OPTION_RANKING,
-    MENU_OPTION_EXIT,
-    MENU_OPTION_TOTAL
-} MenuOption;
+    OPCAO_MENU_JOGAR = 0,
+    OPCAO_MENU_RANKING,
+    OPCAO_MENU_SAIR,
+    TOTAL_OPCOES_MENU
+} OpcaoMenu;
 
 typedef struct {
-    int selectedOption;
+    int opcaoSelecionada;
+    Rectangle botoes[TOTAL_OPCOES_MENU];
 } Menu;
 
-void InitMenu(Menu *menu);
-void UpdateMenu(Menu *menu);
-void DrawMenu(const Menu *menu);
+void InicializarMenu(Menu *menu);
+int AtualizarMenu(Menu *menu);
+void DesenharMenu(const Menu *menu);
 
 #endif
